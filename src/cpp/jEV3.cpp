@@ -9,8 +9,9 @@
 JNIEXPORT jlong JNICALL Java_jEV3__1connect
 (JNIEnv *, jobject, jint port) {
 	EV3 *bot = new EV3(EV3::MOTOR_A, EV3::MOTOR_B);
-	std::cout << "try to connect \n";
-	bot->connect(port);
+	std::cout << "Try to connect " << port << std::endl;
+	bot->connect( (int)port );
+
 	return reinterpret_cast<long long int>(bot);
 }
 
@@ -22,6 +23,7 @@ JNIEXPORT jlong JNICALL Java_jEV3__1connect
 JNIEXPORT void JNICALL Java_jEV3__1move
 (JNIEnv *, jobject, jbyte motor, jint speed, jlong ptr) {
 	reinterpret_cast<EV3*>(ptr)->outputSpeed(motor, speed);
+	reinterpret_cast<EV3*>(ptr)->outputStart(motor);
 }
 
 /*

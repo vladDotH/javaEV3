@@ -220,7 +220,7 @@ void EV3::connect(unsigned int comPort) {
 	sprintf_s(comPortString, "%d", comPort);
 	std::string fileName = "\\\\.\\COM" + std::string(comPortString);
 
-	bluetoothHandle = CreateFile( (const wchar_t*) fileName.c_str(),
+	bluetoothHandle = CreateFileA( fileName.c_str(),
 		GENERIC_READ | GENERIC_WRITE,
 		0,    // comm devices must be opened w/exclusive-access
 		NULL, // no security attributes
