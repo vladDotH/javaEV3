@@ -28,7 +28,16 @@ public class jEV3 {
     native private void _move( byte motor, int speed, long pointer );
     native private void _stop( byte motor, int type, long pointer );
 
+    private byte Rmotor, Lmotor;
+
+    public jEV3(){
+    }
+
     public jEV3( int port ){
+        connect(port);
+    }
+
+    public void connect( int port ){
         EV3pointer = _connect(port);
     }
 
@@ -38,6 +47,16 @@ public class jEV3 {
 
     public void stop( byte motor, int type ){
         _stop( motor, type, EV3pointer);
+    }
+
+    public void setRideMotors( byte R, byte L ){
+        Rmotor = R;
+        Lmotor = L;
+    }
+
+    public void ride( int Rspeed, int Lspeed ){
+        move( Rmotor, Rspeed );
+        move( Lmotor, Lspeed );
     }
 
 }

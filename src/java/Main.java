@@ -31,7 +31,10 @@ class TestFrame extends JFrame {
         super("Test frame");
         createGUI();
 
-        bot = new jEV3(4);
+        int port = (new Scanner(System.in)).nextInt();
+
+        bot = new jEV3(port);
+        bot.setRideMotors( jEV3.MOTOR_B, jEV3.MOTOR_C );
     }
 
     public void createGUI() {
@@ -48,13 +51,31 @@ class TestFrame extends JFrame {
         panel.addKeyListener(new KeyAdapter() {
             public void keyPressed(KeyEvent e) {
                 if( e.getKeyChar() == 'w' )
-                    bot.move(jEV3.MOTOR_A, 50);
+                    bot.ride(100, 100);
                 else if( e.getKeyChar() == 'd' )
-                    bot.move(jEV3.MOTOR_A, -50);
+                    bot.ride(-100, -100);
+
+                else if( e.getKeyChar() == 'k' ){
+                    new Thread( () -> {
+                        bot.move(jEV3.MOTOR_A, 50);
+
+                        try {
+                            Thread.sleep((long) 400);
+                        } catch (InterruptedException exception) { }
+
+                        bot.move( jEV3.MOTOR_A, -50 );
+
+                        try {
+                            Thread.sleep((long) 500);
+                        } catch (InterruptedException exception) { }
+
+                        bot.stop( jEV3.MOTOR_A, jEV3.STOP_FLOAT );
+                    } ).run();
+                }
             }
 
             public void keyReleased(KeyEvent e){
-                bot.stop(jEV3.MOTOR_A, jEV3.STOP_FLOAT);
+                bot.stop( (byte)( jEV3.MOTOR_B | jEV3.MOTOR_C ), jEV3.STOP_FLOAT);
             }
 
         });
