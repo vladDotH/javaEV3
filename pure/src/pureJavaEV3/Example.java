@@ -7,7 +7,7 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.util.Scanner;
 
-public class Main {
+public class Example {
     public static void main(String[] args) {
 
         javax.swing.SwingUtilities.invokeLater(new Runnable() {
@@ -36,6 +36,7 @@ class TestFrame extends JFrame {
         int port = (new Scanner(System.in)).nextInt();
 
         bot = new jEV3("COM" + port);
+        bot.setLR(bot.B, bot.C);
 
     }
 
@@ -53,34 +54,36 @@ class TestFrame extends JFrame {
         panel.addKeyListener(new KeyAdapter() {
             public void keyPressed(KeyEvent e) {
                 if( e.getKeyChar() == 'w' ){
-                    bot.setSpeed(jEV3.Motor.A, 100);
-                    bot.start(jEV3.Motor.A);
-
-                    try {
-                        Thread.sleep(200);
-                    } catch (InterruptedException e1) {
-                        e1.printStackTrace();
-                    }
-
-                    bot.setSpeed(jEV3.Motor.A, -100);
-                    bot.start(jEV3.Motor.A);
-
-                    try {
-                        Thread.sleep(200);
-                    } catch (InterruptedException e1) {
-                        e1.printStackTrace();
-                    }
+                    bot.ride(50, 50);
                 }
 
                 else if( e.getKeyChar() == 'd' ){
-                    bot.setSpeed(jEV3.Motor.A, -100);
-                    bot.start(jEV3.Motor.A);
+                    bot.ride(-50, - 50);
+                }
+
+                else if( e.getKeyChar() == 'k' ){
+                    new Thread( () -> {
+                        bot.A.setSpeed(50);
+                        bot.A.start();
+
+                        try {
+                            Thread.sleep((long) 400);
+                        } catch (InterruptedException exception) { }
+
+                        bot.A.setSpeed(-50);
+
+                        try {
+                            Thread.sleep((long) 500);
+                        } catch (InterruptedException exception) { }
+
+                        bot.A.stopBreak();
+                    } ).run();
                 }
 
             }
 
             public void keyReleased(KeyEvent e){
-                bot.stop( jEV3.Motor.A, jEV3.Stop.Break);
+                bot.ride(0,0);
             }
 
         });

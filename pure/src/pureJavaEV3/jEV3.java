@@ -1,18 +1,15 @@
 package pureJavaEV3;
 
-
 import jssc.*;
 
-import java.util.Arrays;
-
 public class jEV3 implements SerialPortEventListener, AutoCloseable {
-
-    static class MessageType {
-        static class Mode{
+    private static class MessageType {
+        static class Mode {
             public byte first, second;
         }
 
         static Mode speed, stop, start;
+
         static {
             speed = new Mode();
             speed.first = 10;
@@ -28,18 +25,61 @@ public class jEV3 implements SerialPortEventListener, AutoCloseable {
         }
     }
 
-    static class Motor {
+    private static class MotorCodes {
         static byte A = 0b1,
                 B = 0b10,
                 C = 0b100,
                 D = 0b1000;
     }
 
-    static class Stop {
-        static byte Float = 0, Break = 1;
+    private static class Stop {
+        static byte Float = 0,
+                Break = 1;
     }
 
+    public class Motor {
+        private byte code;
+        private byte speed = 0;
+        private boolean active = false;
+
+        public Motor(int code) {
+            this.code = (byte) code;
+        }
+
+        public void setSpeed(int speed) {
+            if (speed != this.speed)
+                jEV3.this.setSpeed(code, speed);
+        }
+
+        public void start() {
+            if (!active) {
+                jEV3.this.start(code);
+                active = true;
+            }
+        }
+
+        public void stopFloat() {
+            if (active) {
+                jEV3.this.stop(code, Stop.Float);
+                active = false;
+            }
+        }
+
+        public void stopBreak() {
+            if (active) {
+                jEV3.this.stop(code, Stop.Break);
+                active = false;
+            }
+        }
+    }
+
+    public final Motor A = new Motor(MotorCodes.A),
+            B = new Motor(MotorCodes.B),
+            C = new Motor(MotorCodes.C),
+            D = new Motor(MotorCodes.D);
+
     private SerialPort ev3;
+    private Motor left = B, right = C;
 
     public jEV3(String portName) {
         ev3 = new SerialPort(portName);
@@ -57,7 +97,7 @@ public class jEV3 implements SerialPortEventListener, AutoCloseable {
 
             ev3.addEventListener(this, SerialPort.MASK_RXCHAR);
 
-            Thread.sleep(2000);
+            Thread.sleep(1000);
         } catch (SerialPortException ex) {
             System.out.println(ex);
         } catch (InterruptedException e) {
@@ -65,7 +105,25 @@ public class jEV3 implements SerialPortEventListener, AutoCloseable {
         }
     }
 
-    public void setSpeed(byte motor, int speed) {
+    public void setLR(Motor left, Motor right) {
+        this.left = left;
+        this.right = right;
+    }
+
+    public void ride(int left, int right) {
+        this.left.setSpeed(left);
+        this.right.setSpeed(right);
+
+        this.left.start();
+        this.right.start();
+
+        if( left == 0 )
+            this.left.stopFloat();
+        if( right == 0 )
+            this.right.stopFloat();
+    }
+
+    private void setSpeed(byte motor, int speed) {
         byte[] message = new byte[12];
         byte[] defaultPack = packMessage(MessageType.speed);
 
@@ -81,7 +139,7 @@ public class jEV3 implements SerialPortEventListener, AutoCloseable {
         send(message);
     }
 
-    public void start(byte motor) {
+    private void start(byte motor) {
         byte[] message = new byte[10];
         byte[] defaultPack = packMessage(MessageType.start);
 
@@ -95,7 +153,7 @@ public class jEV3 implements SerialPortEventListener, AutoCloseable {
         send(message);
     }
 
-    public void stop(byte motor, byte stopMode) {
+    private void stop(byte motor, byte stopMode) {
         byte[] message = new byte[11];
         byte[] defaultPack = packMessage(MessageType.stop);
 
@@ -110,8 +168,8 @@ public class jEV3 implements SerialPortEventListener, AutoCloseable {
         send(message);
     }
 
-    private byte[] packMessage( MessageType.Mode mode ){
-        byte [] msg = new byte[9];
+    private byte[] packMessage(MessageType.Mode mode) {
+        byte[] msg = new byte[9];
         msg[0] = mode.first;
         msg[7] = mode.second;
         msg[4] = -128;
@@ -119,7 +177,7 @@ public class jEV3 implements SerialPortEventListener, AutoCloseable {
         return msg;
     }
 
-    private void send(byte[] message){
+    private void send(byte[] message) {
         try {
             ev3.writeBytes(message);
         } catch (SerialPortException e) {
@@ -134,10 +192,6 @@ public class jEV3 implements SerialPortEventListener, AutoCloseable {
 
     @Override
     public void close() throws Exception {
-        try {
-            ev3.closePort();
-        } catch (SerialPortException ex){
-            System.out.println(ex);
-        }
+        ev3.closePort();
     }
 }
